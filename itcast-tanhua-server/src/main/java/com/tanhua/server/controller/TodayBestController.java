@@ -1,13 +1,11 @@
 package com.tanhua.server.controller;
 
 import com.tanhua.server.service.TodayBestService;
-import com.tanhua.server.utils.UserThreadLocal;
 import com.tanhua.server.vo.PageResult;
 import com.tanhua.server.vo.RecommendUserQueryParam;
 import com.tanhua.server.vo.TodayBest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
