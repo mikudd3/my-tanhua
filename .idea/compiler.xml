@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="itcast-tanhua-common" />
+        <module name="itcast-tanhua-dubbo-interface" />
+        <module name="itcast-tanhua-dubbo-service" />
+        <module name="itcast-tanhua-dubbo-service-quanzi" />
+        <module name="itcast-tanhua-server" />
+        <module name="itcast-tanhua-sso" />
+      </profile>
+    </annotationProcessing>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="itcast-tanhua-common" options="-parameters" />
+      <module name="itcast-tanhua-dubbo-interface" options="-parameters" />
+      <module name="itcast-tanhua-dubbo-service" options="-parameters" />
+      <module name="itcast-tanhua-dubbo-service-quanzi" options="-parameters" />
+      <module name="itcast-tanhua-server" options="-parameters" />
+      <module name="itcast-tanhua-sso" options="-parameters" />
+    </option>
+  </component>
+</project>
