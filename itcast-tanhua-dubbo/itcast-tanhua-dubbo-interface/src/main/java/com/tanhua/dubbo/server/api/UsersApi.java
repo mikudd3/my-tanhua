@@ -30,4 +30,12 @@ public interface UsersApi {
      * @return
      */
     PageInfo<Users> queryUsersList(Long userId, Integer page, Integer pageSize);
+
+    /**
+     * 删除好友数据
+     *
+     * @param users
+     * @return
+     */
+    boolean removeUsers(Users users);
 }

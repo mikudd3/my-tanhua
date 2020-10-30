@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Collections;
 import java.util.List;
 
 @Data
@@ -15,6 +16,6 @@ public class PageResult {
     private Integer pagesize;//页大小
     private Integer pages;//总页数
     private Integer page;//当前页码
-    private List<?> items; //列表
+    private List<?> items = Collections.emptyList(); //列表
 
 }

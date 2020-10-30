@@ -26,7 +26,7 @@ public class UsersApiImpl implements UsersApi {
         if (users.getFriendId() == null || users.getUserId() == null) {
             return null;
         }
-        
+
         // 检测是否该好友关系是否存在
         Query query = Query.query(Criteria.where("userId").is(users.getUserId()).and("friendId").is(users.getFriendId()));
         Users oldUsers = this.mongoTemplate.findOne(query, Users.class);
@@ -60,5 +60,12 @@ public class UsersApiImpl implements UsersApi {
         pageInfo.setRecords(usersList);
         pageInfo.setTotal(0); //不提供总数
         return pageInfo;
+    }
+
+    @Override
+    public boolean removeUsers(Users users) {
+        Query query = Query.query(Criteria.where("userId").is(users.getUserId())
+                .and("friendId").is(users.getFriendId()));
+        return this.mongoTemplate.remove(query, Users.class).getDeletedCount() > 0;
     }
 }
