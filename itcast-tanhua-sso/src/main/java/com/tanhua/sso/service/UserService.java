@@ -37,6 +37,9 @@ public class UserService {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Autowired
+    private HuanXinService huanXinService;
+
+    @Autowired
     private RocketMQTemplate rocketMQTemplate;
 
     @Value("${jwt.secret}")
@@ -68,6 +71,9 @@ public class UserService {
             this.userMapper.insert(user); //插入数据完成，id已经有了值了
             selectUser = user;
             isNew = true;
+
+            //注册环信用户
+            this.huanXinService.register(user.getId());
         }
 
         Map<String, Object> claims = new HashMap<String, Object>();

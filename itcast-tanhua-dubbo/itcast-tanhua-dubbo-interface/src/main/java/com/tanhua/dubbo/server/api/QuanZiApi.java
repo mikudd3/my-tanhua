@@ -83,4 +83,10 @@ public interface QuanZiApi {
      */
     PageInfo<Comment> queryCommentList(String publishId, Integer page, Integer pageSize);
 
+    /**
+     * 查询用户的评论数据
+     *
+     * @return
+     */
+    PageInfo<Comment> queryCommentListByUser(Long userId, Integer type, Integer page, Integer pageSize);
 }

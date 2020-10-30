@@ -167,6 +167,18 @@ public class QuanZiApiImpl implements QuanZiApi {
             comment.setPublishId(new ObjectId(publishId));
             comment.setCommentType(type);
             comment.setCreated(System.currentTimeMillis());
+
+            // 设置发布人的id
+            Publish publish = this.mongoTemplate.findById(comment.getPublishId(), Publish.class);
+            if (null != publish) {
+                comment.setPublishUserId(publish.getUserId());
+            } else {
+                Video video = this.mongoTemplate.findById(comment.getPublishId(), Video.class);
+                if (null != video) {
+                    comment.setPublishUserId(video.getUserId());
+                }
+            }
+
             this.mongoTemplate.save(comment);
             return true;
         } catch (Exception e) {
@@ -203,4 +215,24 @@ public class QuanZiApiImpl implements QuanZiApi {
         pageInfo.setTotal(0); //不提供总数
         return pageInfo;
     }
+
+    @Override
+    public PageInfo<Comment> queryCommentListByUser(Long userId, Integer type, Integer page, Integer pageSize) {
+
+        PageRequest pageRequest = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Order.desc("created")));
+        Query query = new Query(Criteria
+                .where("publishUserId").is(userId)
+                .and("commentType").is(type)).with(pageRequest);
+
+        List<Comment> commentList = this.mongoTemplate.find(query, Comment.class);
+
+        PageInfo<Comment> pageInfo = new PageInfo<>();
+        pageInfo.setPageNum(page);
+        pageInfo.setPageSize(pageSize);
+        pageInfo.setRecords(commentList);
+        pageInfo.setTotal(0); //不提供总数
+        return pageInfo;
+    }
+
+
 }
