@@ -4,6 +4,8 @@ import com.tanhua.dubbo.server.pojo.Comment;
 import com.tanhua.dubbo.server.pojo.Publish;
 import com.tanhua.dubbo.server.vo.PageInfo;
 
+import java.util.List;
+
 public interface QuanZiApi {
 
     /**
@@ -12,7 +14,7 @@ public interface QuanZiApi {
      * @param publish
      * @return
      */
-    boolean savePublish(Publish publish);
+    String savePublish(Publish publish);
 
     /**
      * 查询动态
@@ -89,4 +91,12 @@ public interface QuanZiApi {
      * @return
      */
     PageInfo<Comment> queryCommentListByUser(Long userId, Integer type, Integer page, Integer pageSize);
+
+    /**
+     * 根据pid批量查询
+     *
+     * @param pids
+     * @return
+     */
+    List<Publish> queryPublishByPids(List<Long> pids);
 }

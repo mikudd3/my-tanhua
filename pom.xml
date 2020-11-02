@@ -9,6 +9,7 @@
         <module>itcast-tanhua-common</module>
         <module>itcast-tanhua-dubbo</module>
         <module>itcast-tanhua-server</module>
+        <module>itcast-tanhua-recommend</module>
     </modules>
 
     <parent>

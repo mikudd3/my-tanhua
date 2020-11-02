@@ -39,7 +39,7 @@ public class MovementsService {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
-    public boolean savePublish(String textContent,
+    public String savePublish(String textContent,
                                String location,
                                String latitude,
                                String longitude,
@@ -79,10 +79,37 @@ public class MovementsService {
         //获取当前的登录信息
         User user = UserThreadLocal.get();
 
-        //如果是推荐，不需要传递用户id
-        Long userId = isRecommend ? null : user.getId();
+        PageInfo<Publish> pageInfo = null;
+        if (isRecommend) { //推荐动态逻辑处理
+            // 查询Redis
+            String value = this.redisTemplate.opsForValue().get("QUANZI_PUBLISH_RECOMMEND_" + user.getId());
+            if (StringUtils.isNotEmpty(value)) {
+                String[] pids = StringUtils.split(value, ',');
+                int startIndex = (page - 1) * pageSize;
+                if(startIndex < pids.length){
+                    int endIndex = startIndex + pageSize - 1;
+                    if (endIndex >= pids.length) {
+                        endIndex = pids.length - 1;
+                    }
 
-        PageInfo<Publish> pageInfo = this.quanZiApi.queryPublishList(userId, page, pageSize);
+                    List<Long> pidList = new ArrayList<>();
+                    for (int i = startIndex; i <= endIndex; i++) {
+                        pidList.add(Long.valueOf(pids[i]));
+                    }
+
+                    List<Publish> publishList = this.quanZiApi.queryPublishByPids(pidList);
+                    pageInfo = new PageInfo<>();
+                    pageInfo.setRecords(publishList);
+                }
+            }
+        }
+
+        //如果是推荐，不需要传递用户id
+        if (null == pageInfo) {
+            Long userId = isRecommend ? null : user.getId();
+            pageInfo = this.quanZiApi.queryPublishList(userId, page, pageSize);
+        }
+
         pageResult.setPagesize(pageSize);
         pageResult.setPage(page);
         pageResult.setCounts(0);
@@ -241,15 +268,23 @@ public class MovementsService {
     }
 
     private void fillValueToMovements(Movements movements, UserInfo userInfo) {
+        User user = UserThreadLocal.get();
         movements.setAge(userInfo.getAge());
         movements.setAvatar(userInfo.getLogo());
         movements.setGender(userInfo.getSex().name().toLowerCase());
         movements.setNickname(userInfo.getNickName());
         movements.setTags(StringUtils.split(userInfo.getTags(), ','));
-        movements.setCommentCount(10); //TODO 评论数
+
+        Long commentCount = this.quanZiApi.queryCommentCount(movements.getId(), 2);
+        if(null == commentCount){
+            movements.setCommentCount(0); //评论数
+        }else{
+            movements.setCommentCount(commentCount.intValue()); //评论数
+        }
+
         movements.setDistance("1.2公里"); //TODO 距离
 
-        String userKey = "QUANZI_COMMENT_LIKE_USER_" + userInfo.getUserId() + "_" + movements.getId();
+        String userKey = "QUANZI_COMMENT_LIKE_USER_" + user.getId() + "_" + movements.getId();
         movements.setHasLiked(this.redisTemplate.hasKey(userKey) ? 1 : 0); //是否点赞（1是，0否）
 
         String key = "QUANZI_COMMENT_LIKE_" + movements.getId();
@@ -260,7 +295,7 @@ public class MovementsService {
             movements.setLikeCount(0);
         }
 
-        String userLoveKey = "QUANZI_COMMENT_LOVE_USER_" + userInfo.getUserId() + "_" + movements.getId();
+        String userLoveKey = "QUANZI_COMMENT_LOVE_USER_" + user.getId() + "_" + movements.getId();
         movements.setHasLoved(this.redisTemplate.hasKey(userLoveKey) ? 1 : 0); //是否喜欢（1是，0否）
 
         key = "QUANZI_COMMENT_LOVE_" + movements.getId();

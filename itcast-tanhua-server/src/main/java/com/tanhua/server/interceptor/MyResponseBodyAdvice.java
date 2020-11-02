@@ -2,6 +2,7 @@ package com.tanhua.server.interceptor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.MethodParameter;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
@@ -23,6 +24,9 @@ public class MyResponseBodyAdvice implements ResponseBodyAdvice {
 
     private ObjectMapper mapper = new ObjectMapper();
 
+    @Value("${tanhua.cache.enable}")
+    private Boolean enable;
+
     @Override
     public boolean supports(MethodParameter returnType, Class converterType) {
         // 考虑到post请求是写入数据操作，所以就不进行缓存了，只针对get进行处理
@@ -32,6 +36,10 @@ public class MyResponseBodyAdvice implements ResponseBodyAdvice {
 
     @Override
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType, Class selectedConverterType, ServerHttpRequest request, ServerHttpResponse response) {
+        if (!enable) {
+            //未开启缓存
+            return body;
+        }
         if(null == body){
             return null;
         }

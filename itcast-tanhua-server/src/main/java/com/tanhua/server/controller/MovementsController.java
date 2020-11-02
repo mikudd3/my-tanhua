@@ -1,8 +1,10 @@
 package com.tanhua.server.controller;
 
 import com.tanhua.server.service.MovementsService;
+import com.tanhua.server.service.QuanziMQService;
 import com.tanhua.server.vo.Movements;
 import com.tanhua.server.vo.PageResult;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,9 @@ public class MovementsController {
     @Autowired
     private MovementsService movementsService;
 
+    @Autowired
+    private QuanziMQService quanziMQService;
+
     /**
      * 发送动态
      *
@@ -25,14 +30,16 @@ public class MovementsController {
      * @return
      */
     @PostMapping()
-    public ResponseEntity<Void> savePublish(@RequestParam(value = "textContent", required = false) String textContent,
-                                            @RequestParam(value = "location", required = false) String location,
-                                            @RequestParam(value = "latitude", required = false) String latitude,
-                                            @RequestParam(value = "longitude", required = false) String longitude,
+    public ResponseEntity<Void> savePublish(@RequestParam("textContent") String textContent,
+                                            @RequestParam("location") String location,
+                                            @RequestParam("longitude") String longitude,
+                                            @RequestParam("latitude") String latitude,
                                             @RequestParam(value = "imageContent", required = false) MultipartFile[] multipartFile) {
         try {
-            boolean result = this.movementsService.savePublish(textContent, location, latitude, longitude, multipartFile);
-            if (result) {
+            String publishId = this.movementsService.savePublish(textContent, location, longitude, latitude, multipartFile);
+            if (StringUtils.isNotEmpty(publishId)) {
+                // 发送消息
+                this.quanziMQService.publishMsg(publishId);
                 return ResponseEntity.ok(null);
             }
         } catch (Exception e) {
@@ -78,6 +85,10 @@ public class MovementsController {
         try {
             Long likeCount = this.movementsService.likeComment(publishId);
             if (likeCount != null) {
+
+                //发送点赞消息
+                this.quanziMQService.likePublishMsg(publishId);
+
                 return ResponseEntity.ok(likeCount);
             }
         } catch (Exception e) {
@@ -97,6 +108,10 @@ public class MovementsController {
         try {
             Long likeCount = this.movementsService.cancelLikeComment(publishId);
             if (null != likeCount) {
+
+                //发送取消点赞消息
+                this.quanziMQService.disLikePublishMsg(publishId);
+
                 return ResponseEntity.ok(likeCount);
             }
         } catch (Exception e) {
@@ -116,6 +131,10 @@ public class MovementsController {
         try {
             Long loveCount = this.movementsService.loveComment(publishId);
             if (null != loveCount) {
+
+                //发送喜欢消息
+                this.quanziMQService.lovePublishMsg(publishId);
+
                 return ResponseEntity.ok(loveCount);
             }
         } catch (Exception e) {
@@ -135,6 +154,10 @@ public class MovementsController {
         try {
             Long loveCount = this.movementsService.cancelLoveComment(publishId);
             if (null != loveCount) {
+
+                //发送取消喜欢消息
+                this.quanziMQService.disLovePublishMsg(publishId);
+
                 return ResponseEntity.ok(loveCount);
             }
         } catch (Exception e) {
@@ -153,7 +176,11 @@ public class MovementsController {
     public ResponseEntity<Movements> queryById(@PathVariable("id") String publishId) {
         try {
             Movements movements = this.movementsService.queryById(publishId);
-            if(null != movements){
+            if (null != movements) {
+
+                //发送消息
+                this.quanziMQService.queryPublishMsg(publishId);
+
                 return ResponseEntity.ok(movements);
             }
         } catch (Exception e) {
@@ -161,7 +188,5 @@ public class MovementsController {
         }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
-
-
 
 }

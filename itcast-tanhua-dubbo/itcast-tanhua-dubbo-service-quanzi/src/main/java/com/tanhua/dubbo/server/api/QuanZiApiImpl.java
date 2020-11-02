@@ -3,6 +3,7 @@ package com.tanhua.dubbo.server.api;
 import com.alibaba.dubbo.config.annotation.Service;
 import com.mongodb.client.result.DeleteResult;
 import com.tanhua.dubbo.server.pojo.*;
+import com.tanhua.dubbo.server.service.IdService;
 import com.tanhua.dubbo.server.vo.PageInfo;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,18 +23,23 @@ public class QuanZiApiImpl implements QuanZiApi {
     @Autowired
     private MongoTemplate mongoTemplate;
 
+    @Autowired
+    private IdService idService;
+
 
     @Override
-    public boolean savePublish(Publish publish) {
+    public String savePublish(Publish publish) {
 
         // 校验
         if (publish.getUserId() == null) {
-            return false;
+            return null;
         }
 
         try {
             publish.setCreated(System.currentTimeMillis()); //设置创建时间
             publish.setId(ObjectId.get()); //设置id
+            publish.setPid(this.idService.createId("publish", publish.getId().toHexString()));
+
             this.mongoTemplate.save(publish); //保存发布
 
             Album album = new Album(); // 构建相册对象
@@ -54,13 +60,13 @@ public class QuanZiApiImpl implements QuanZiApi {
                 this.mongoTemplate.save(timeLine, "quanzi_time_line_" + user.getFriendId());
             }
 
-            return true;
+            return publish.getId().toHexString();
         } catch (Exception e) {
             e.printStackTrace();
             //TODO 出错的事务回滚
         }
 
-        return false;
+        return null;
     }
 
     @Override
@@ -189,7 +195,7 @@ public class QuanZiApiImpl implements QuanZiApi {
 
     @Override
     public Long queryCommentCount(String publishId, Integer type) {
-        Query query = Query.query(Criteria.where("publishId").is(publishId).and("commentType").is(type));
+        Query query = Query.query(Criteria.where("publishId").is(new ObjectId(publishId)).and("commentType").is(type));
         return this.mongoTemplate.count(query, Comment.class);
     }
 
@@ -232,6 +238,12 @@ public class QuanZiApiImpl implements QuanZiApi {
         pageInfo.setRecords(commentList);
         pageInfo.setTotal(0); //不提供总数
         return pageInfo;
+    }
+
+    @Override
+    public List<Publish> queryPublishByPids(List<Long> pids){
+        Query query = new Query(Criteria.where("pid").in(pids));
+        return this.mongoTemplate.find(query, Publish.class);
     }
 
 

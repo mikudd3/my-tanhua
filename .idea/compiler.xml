@@ -11,6 +11,7 @@
         <module name="itcast-tanhua-dubbo-interface" />
         <module name="itcast-tanhua-dubbo-service" />
         <module name="itcast-tanhua-dubbo-service-quanzi" />
+        <module name="itcast-tanhua-recommend" />
         <module name="itcast-tanhua-server" />
         <module name="itcast-tanhua-sso" />
       </profile>
@@ -22,6 +23,7 @@
       <module name="itcast-tanhua-dubbo-interface" options="-parameters" />
       <module name="itcast-tanhua-dubbo-service" options="-parameters" />
       <module name="itcast-tanhua-dubbo-service-quanzi" options="-parameters" />
+      <module name="itcast-tanhua-recommend" options="-parameters" />
       <module name="itcast-tanhua-server" options="-parameters" />
       <module name="itcast-tanhua-sso" options="-parameters" />
     </option>

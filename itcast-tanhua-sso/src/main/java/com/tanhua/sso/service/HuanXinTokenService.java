@@ -31,7 +31,7 @@ public class HuanXinTokenService {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
-    private String refreshToken() {
+    public String refreshToken() {
         String targetUrl = this.huanXinConfig.getUrl() + this.huanXinConfig.getOrgName() + "/" + this.huanXinConfig.getAppName() + "/token";
 
         Map<String, String> param = new HashMap<>();

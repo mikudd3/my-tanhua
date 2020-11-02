@@ -3,6 +3,8 @@ package com.tanhua.dubbo.server.api;
 import com.tanhua.dubbo.server.pojo.Video;
 import com.tanhua.dubbo.server.vo.PageInfo;
 
+import java.util.List;
+
 public interface VideoApi {
 
     /**
@@ -11,7 +13,7 @@ public interface VideoApi {
      * @param video
      * @return
      */
-    Boolean saveVideo(Video video);
+    String saveVideo(Video video);
 
     /**
      * 分页查询小视频列表，按照时间倒序排序
@@ -40,4 +42,19 @@ public interface VideoApi {
      */
     Boolean disFollowUser(Long userId, Long followUserId);
 
+    /**
+     * 根据id查询
+     *
+     * @param videoId
+     * @return
+     */
+    Video queryVideoById(String videoId);
+
+    /**
+     * 根据vid批量查询
+     *
+     * @param vids
+     * @return
+     */
+    List<Video> queryVideoListByPids(List<Long> vids);
 }

@@ -65,6 +65,7 @@ public class IMService {
         users.setFriendId(userId);
 
         String id = this.usersApi.saveUsers(users);
+
         if (StringUtils.isNotEmpty(id)) {
             //注册好友关系到环信
             try {

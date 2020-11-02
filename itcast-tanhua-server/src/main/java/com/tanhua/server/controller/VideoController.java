@@ -1,7 +1,10 @@
 package com.tanhua.server.controller;
 
+import com.tanhua.server.service.MovementsService;
+import com.tanhua.server.service.VideoMQService;
 import com.tanhua.server.service.VideoService;
 import com.tanhua.server.vo.PageResult;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,17 +21,30 @@ public class VideoController {
     private VideoService videoService;
 
     @Autowired
-    private MovementsController movementsController;
+    private MovementsService movementsService;
 
     @Autowired
     private CommentsController commentsController;
 
+    @Autowired
+    private VideoMQService videoMQService;
+
+    /**
+     * 发布小视频
+     *
+     * @param picFile
+     * @param videoFile
+     * @return
+     */
     @PostMapping
     public ResponseEntity<Void> saveVideo(@RequestParam(value = "videoThumbnail", required = false) MultipartFile picFile,
                                           @RequestParam(value = "videoFile", required = false) MultipartFile videoFile) {
         try {
-            Boolean bool = this.videoService.saveVideo(picFile, videoFile);
-            if(bool){
+            String id = this.videoService.saveVideo(picFile, videoFile);
+            if (StringUtils.isNotEmpty(id)) {
+                //发送消息
+                this.videoMQService.videoMsg(id);
+
                 return ResponseEntity.ok(null);
             }
         } catch (Exception e) {
@@ -69,7 +85,16 @@ public class VideoController {
      */
     @PostMapping("/{id}/like")
     public ResponseEntity<Long> likeComment(@PathVariable("id") String videoId) {
-        return this.movementsController.likeComment(videoId);
+        try {
+            Long likeCount = this.movementsService.likeComment(videoId);
+            if (likeCount != null) {
+                this.videoMQService.likeVideoMsg(videoId);
+                return ResponseEntity.ok(likeCount);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
 
     /**
@@ -80,17 +105,54 @@ public class VideoController {
      */
     @PostMapping("/{id}/dislike")
     public ResponseEntity<Long> disLikeComment(@PathVariable("id") String videoId) {
-        return this.movementsController.disLikeComment(videoId);
+        try {
+            Long likeCount = this.movementsService.cancelLikeComment(videoId);
+            if (null != likeCount) {
+                this.videoMQService.disLikeVideoMsg(videoId);
+                return ResponseEntity.ok(likeCount);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
 
     /**
-     * 评论列表
+     * 评论点赞
+     *
+     * @param publishId
+     * @return
      */
-    @GetMapping("/{id}/comments")
-    public ResponseEntity<PageResult> queryCommentsList(@PathVariable("id") String videoId,
-                                                        @RequestParam(value = "page", defaultValue = "1") Integer page,
-                                                        @RequestParam(value = "pagesize", defaultValue = "10") Integer pagesize) {
-        return this.commentsController.queryCommentsList(videoId, page, pagesize);
+    @PostMapping("/comments/{id}/like")
+    public ResponseEntity<Long> commentsLikeComment(@PathVariable("id") String publishId) {
+        try {
+            Long likeCount = this.movementsService.likeComment(publishId);
+            if (likeCount != null) {
+                return ResponseEntity.ok(likeCount);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    }
+
+    /**
+     * 评论取消点赞
+     *
+     * @param publishId
+     * @return
+     */
+    @PostMapping("/comments/{id}/dislike")
+    public ResponseEntity<Long> disCommentsLikeComment(@PathVariable("id") String publishId) {
+        try {
+            Long likeCount = this.movementsService.cancelLikeComment(publishId);
+            if (null != likeCount) {
+                return ResponseEntity.ok(likeCount);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
 
     /**
@@ -104,29 +166,24 @@ public class VideoController {
     public ResponseEntity<Void> saveComments(@RequestBody Map<String, String> param,
                                              @PathVariable("id") String videoId) {
         param.put("movementId", videoId);
-        return this.commentsController.saveComments(param);
+        ResponseEntity<Void> entity = this.commentsController.saveComments(param);
+
+        if (entity.getStatusCode().is2xxSuccessful()) {
+            //发送消息
+            this.videoMQService.commentVideoMsg(videoId);
+        }
+
+        return entity;
     }
 
     /**
-     * 评论点赞
-     *
-     * @param publishId
-     * @return
+     * 评论列表
      */
-    @PostMapping("/comments/{id}/like")
-    public ResponseEntity<Long> commentsLikeComment(@PathVariable("id") String publishId) {
-        return this.movementsController.likeComment(publishId);
-    }
-
-    /**
-     * 评论取消点赞
-     *
-     * @param publishId
-     * @return
-     */
-    @PostMapping("/comments/{id}/dislike")
-    public ResponseEntity<Long> disCommentsLikeComment(@PathVariable("id") String publishId) {
-        return this.movementsController.disLikeComment(publishId);
+    @GetMapping("/{id}/comments")
+    public ResponseEntity<PageResult> queryCommentsList(@PathVariable("id") String videoId,
+                                                        @RequestParam(value = "page", defaultValue = "1") Integer page,
+                                                        @RequestParam(value = "pagesize", defaultValue = "10") Integer pagesize) {
+        return this.commentsController.queryCommentsList(videoId, page, pagesize);
     }
 
     /**
@@ -146,7 +203,7 @@ public class VideoController {
     }
 
     /**
-     * 取消视频用户关注
+     * 视频用户关注
      */
     @PostMapping("/{id}/userUnFocus")
     public ResponseEntity<Void> saveUserUnFocusComments(@PathVariable("id") Long userId) {

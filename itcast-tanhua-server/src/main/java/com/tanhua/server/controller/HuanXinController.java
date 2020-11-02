@@ -19,7 +19,7 @@ public class HuanXinController {
 
         HuanXinUser huanXinUser = new HuanXinUser();
         huanXinUser.setUsername(user.getId().toString());
-        huanXinUser.setPassword(DigestUtils.md5Hex(user.getId() + "_itcast_tnahua"));
+        huanXinUser.setPassword(DigestUtils.md5Hex(user.getId() + "_itcast_tanhua"));
 
         return ResponseEntity.ok(huanXinUser);
     }

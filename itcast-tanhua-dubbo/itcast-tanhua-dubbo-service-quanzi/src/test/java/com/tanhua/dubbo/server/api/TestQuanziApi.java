@@ -31,7 +31,7 @@ public class TestQuanziApi {
         publish.setSeeType(1);
         publish.setText("今天天气不错~");
         publish.setMedias(Arrays.asList("https://itcast-tanhua.oss-cn-shanghai.aliyuncs.com/images/quanzi/1.jpg"));
-        boolean result = this.quanZiApi.savePublish(publish);
+        String result = this.quanZiApi.savePublish(publish);
         System.out.println(result);
     }
 

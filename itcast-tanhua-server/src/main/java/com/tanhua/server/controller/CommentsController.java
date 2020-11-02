@@ -2,6 +2,7 @@ package com.tanhua.server.controller;
 
 import com.tanhua.server.service.CommentsService;
 import com.tanhua.server.service.MovementsService;
+import com.tanhua.server.service.QuanziMQService;
 import com.tanhua.server.vo.Comments;
 import com.tanhua.server.vo.PageResult;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,9 @@ public class CommentsController {
 
     @Autowired
     private MovementsService movementsService;
+
+    @Autowired
+    private QuanziMQService quanziMQService;
 
     /**
      * 查询评论列表
@@ -44,15 +48,22 @@ public class CommentsController {
     }
 
     /**
-     * 保存评论
+     * 发表评论
+     *
+     * @param param
+     * @return
      */
     @PostMapping
-    public ResponseEntity<Void> saveComments(@RequestBody Map<String,String> param) {
+    public ResponseEntity<Void> saveComments(@RequestBody Map<String, String> param) {
         try {
             String publishId = param.get("movementId");
             String content = param.get("comment");
-            Boolean result = this.commentsService.saveComments(publishId, content);
-            if (result) {
+            Boolean bool = this.commentsService.saveComments(publishId, content);
+            if (bool) {
+
+                //发送消息
+                this.quanziMQService.commentPublishMsg(publishId);
+
                 return ResponseEntity.ok(null);
             }
         } catch (Exception e) {
@@ -60,7 +71,6 @@ public class CommentsController {
         }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
-
     /**
      * 点赞
      *

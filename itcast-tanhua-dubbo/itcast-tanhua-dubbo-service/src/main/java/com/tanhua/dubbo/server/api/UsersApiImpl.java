@@ -27,8 +27,11 @@ public class UsersApiImpl implements UsersApi {
             return null;
         }
 
+        Long userId = users.getUserId();
+        Long friendId = users.getFriendId();
+
         // 检测是否该好友关系是否存在
-        Query query = Query.query(Criteria.where("userId").is(users.getUserId()).and("friendId").is(users.getFriendId()));
+        Query query = Query.query(Criteria.where("userId").is(userId).and("friendId").is(friendId));
         Users oldUsers = this.mongoTemplate.findOne(query, Users.class);
         if (null != oldUsers) {
             return null;
@@ -37,7 +40,15 @@ public class UsersApiImpl implements UsersApi {
         users.setId(ObjectId.get());
         users.setDate(System.currentTimeMillis());
 
+        //注册我与好友的关系
         this.mongoTemplate.save(users);
+
+        //注册好友与我的关系
+        users.setId(ObjectId.get());
+        users.setUserId(friendId);
+        users.setFriendId(userId);
+        this.mongoTemplate.save(users);
+
         return users.getId().toHexString();
     }
 
@@ -64,8 +75,21 @@ public class UsersApiImpl implements UsersApi {
 
     @Override
     public boolean removeUsers(Users users) {
-        Query query = Query.query(Criteria.where("userId").is(users.getUserId())
-                .and("friendId").is(users.getFriendId()));
-        return this.mongoTemplate.remove(query, Users.class).getDeletedCount() > 0;
+
+        Long userId = users.getUserId();
+        Long friendId = users.getFriendId();
+
+        Query query1 = Query.query(Criteria.where("userId").is(userId)
+                .and("friendId").is(friendId));
+
+        //删除我与好友的关系数据
+        long count1 = this.mongoTemplate.remove(query1, Users.class).getDeletedCount();
+
+        Query query2 = Query.query(Criteria.where("userId").is(friendId)
+                .and("friendId").is(userId));
+        //删除好友与我的关系数据
+        long count2 = this.mongoTemplate.remove(query2, Users.class).getDeletedCount();
+
+        return count1 > 0 && count2 > 0;
     }
 }

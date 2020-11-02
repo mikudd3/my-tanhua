@@ -21,6 +21,7 @@ public class Publish implements java.io.Serializable {
     private static final long serialVersionUID = 8732308321082804771L;
 
     private ObjectId id; //主键id
+    private Long pid; //Long类型的id，用于推荐引擎使用
     private Long userId;
     private String text; //文字
     private List<String> medias; //媒体数据，图片或小视频 url

@@ -17,6 +17,7 @@ public class Video implements java.io.Serializable {
     private static final long serialVersionUID = -3136732836884933873L;
 
     private ObjectId id; //主键id
+    private Long vid;
     private Long userId;
     private String text; //文字
     private String picUrl; //视频封面文件

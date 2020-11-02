@@ -4,6 +4,7 @@ import com.alibaba.dubbo.config.annotation.Service;
 import com.mongodb.client.result.DeleteResult;
 import com.tanhua.dubbo.server.pojo.FollowUser;
 import com.tanhua.dubbo.server.pojo.Video;
+import com.tanhua.dubbo.server.service.IdService;
 import com.tanhua.dubbo.server.vo.PageInfo;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,17 +23,22 @@ public class VideoApiImpl implements VideoApi {
     @Autowired
     private MongoTemplate mongoTemplate;
 
+    @Autowired
+    private IdService idService;
+
     @Override
-    public Boolean saveVideo(Video video) {
+    public String saveVideo(Video video) {
         if(video.getUserId() == null){
-            return false;
+            return null;
         }
 
         video.setId(ObjectId.get());
         video.setCreated(System.currentTimeMillis());
+        //生成vid
+        video.setVid(this.idService.createId("video", video.getId().toHexString()));
 
         this.mongoTemplate.save(video);
-        return true;
+        return video.getId().toHexString();
     }
 
     @Override
@@ -69,5 +75,16 @@ public class VideoApiImpl implements VideoApi {
         Query query = Query.query(Criteria.where("userId").is(userId).and("followUserId").is(followUserId));
         DeleteResult deleteResult = this.mongoTemplate.remove(query, FollowUser.class);
         return deleteResult.getDeletedCount() > 0;
+    }
+
+    @Override
+    public Video queryVideoById(String videoId) {
+        return this.mongoTemplate.findById(new ObjectId(videoId), Video.class);
+    }
+
+    @Override
+    public List<Video> queryVideoListByPids(List<Long> vids) {
+        Query query = Query.query(Criteria.where("vid").in(vids));
+        return this.mongoTemplate.find(query, Video.class);
     }
 }
