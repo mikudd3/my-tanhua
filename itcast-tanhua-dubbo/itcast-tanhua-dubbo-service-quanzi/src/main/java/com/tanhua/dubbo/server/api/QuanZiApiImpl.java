@@ -1,5 +1,6 @@
 package com.tanhua.dubbo.server.api;
 
+import com.alibaba.dubbo.common.utils.CollectionUtils;
 import com.alibaba.dubbo.config.annotation.Service;
 import com.mongodb.client.result.DeleteResult;
 import com.tanhua.dubbo.server.pojo.*;
@@ -245,6 +246,38 @@ public class QuanZiApiImpl implements QuanZiApi {
         Query query = new Query(Criteria.where("pid").in(pids));
         return this.mongoTemplate.find(query, Publish.class);
     }
+
+    @Override
+    public PageInfo<Publish> queryAlbumList(Long userId, Integer page, Integer pageSize) {
+        PageInfo<Publish> pageInfo = new PageInfo<>();
+        pageInfo.setPageNum(page);
+        pageInfo.setPageSize(pageSize);
+        pageInfo.setTotal(0); //不提供总数
+
+        PageRequest pageRequest = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Order.desc("created")));
+        Query query = new Query().with(pageRequest);
+        List<Album> albumList = this.mongoTemplate.find(query, Album.class, "quanzi_album_" + userId);
+
+        if(CollectionUtils.isEmpty(albumList)){
+            return pageInfo;
+        }
+
+
+        List<ObjectId> publishIds = new ArrayList<>();
+        for (Album album : albumList) {
+            publishIds.add(album.getPublishId());
+        }
+
+        //查询发布信息
+        Query queryPublish = Query.query(Criteria.where("id").in(publishIds)).with(Sort.by(Sort.Order.desc("created")));
+        List<Publish> publishList = this.mongoTemplate.find(queryPublish, Publish.class);
+
+        pageInfo.setRecords(publishList);
+
+        return pageInfo;
+    }
+
+
 
 
 }

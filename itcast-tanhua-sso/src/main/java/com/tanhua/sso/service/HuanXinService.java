@@ -16,6 +16,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URL;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -122,6 +124,37 @@ public class HuanXinService {
             log.error("请求环信出错~", e);
         }
         reTryCount = 0;
+        return false;
+    }
+
+    public boolean sendMsg(String target, String type, String msg) {
+        String targetUrl = this.huanXinConfig.getUrl()
+                + this.huanXinConfig.getOrgName() + "/"
+                + this.huanXinConfig.getAppName() + "/messages";
+        try {
+            String token = this.huanXinTokenService.getToken();
+            // 请求头
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Authorization", "Bearer " + token);
+
+            Map<String, Object> paramMap = new HashMap<>();
+            paramMap.put("target_type", "users");
+            paramMap.put("target", Arrays.asList(target));
+
+            Map<String, Object> msgMap = new HashMap<>();
+            msgMap.put("type", type);
+            msgMap.put("msg", msg);
+
+            paramMap.put("msg", msgMap);
+
+            //表示消息发送者;无此字段Server会默认设置为“from”:“admin”，有from字段但值为空串(“”)时请求失败
+//            msgMap.put("from", type);
+
+            String body = MAPPER.writeValueAsString(paramMap);
+            return this.execute(targetUrl, body);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return false;
     }
 

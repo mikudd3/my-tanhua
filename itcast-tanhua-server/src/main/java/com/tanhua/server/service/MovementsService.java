@@ -7,12 +7,15 @@ import com.tanhua.common.pojo.UserInfo;
 import com.tanhua.common.service.PicUploadService;
 import com.tanhua.common.vo.PicUploadResult;
 import com.tanhua.dubbo.server.api.QuanZiApi;
+import com.tanhua.dubbo.server.api.VisitorsApi;
 import com.tanhua.dubbo.server.pojo.Publish;
+import com.tanhua.dubbo.server.pojo.Visitors;
 import com.tanhua.dubbo.server.vo.PageInfo;
 import com.tanhua.server.utils.RelativeDateFormat;
 import com.tanhua.server.utils.UserThreadLocal;
 import com.tanhua.server.vo.Movements;
 import com.tanhua.server.vo.PageResult;
+import com.tanhua.server.vo.VisitorsVo;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -21,6 +24,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -29,6 +33,9 @@ public class MovementsService {
 
     @Reference(version = "1.0.0")
     private QuanZiApi quanZiApi;
+
+    @Reference(version = "1.0.0")
+    private VisitorsApi visitorsApi;
 
     @Autowired
     private PicUploadService picUploadService;
@@ -329,5 +336,105 @@ public class MovementsService {
 
         return movements;
 
+    }
+
+    public List<VisitorsVo> queryVisitorsList() {
+        User user = UserThreadLocal.get();
+        String redisKey = "visitor_date_" + user.getId();
+
+        // 如果redis中存在上次查询的时间，就按照这个时间之后查询，如果没有就查询前5个
+        List<Visitors> visitors = null;
+        String value = this.redisTemplate.opsForValue().get(redisKey);
+        if(StringUtils.isEmpty(value)){
+            visitors = this.visitorsApi.topVisitor(user.getId(), 5);
+        }else{
+            visitors = this.visitorsApi.topVisitor(user.getId(), Long.valueOf(value));
+        }
+
+        if(CollectionUtils.isEmpty(visitors)){
+            return Collections.emptyList();
+        }
+
+        List<Long> userIds = new ArrayList<>();
+        for (Visitors visitor : visitors) {
+            userIds.add(visitor.getVisitorUserId());
+        }
+
+        QueryWrapper<UserInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.in("user_id", userIds);
+        List<UserInfo> userInfoList = this.userInfoService.queryUserInfoList(queryWrapper);
+
+        List<VisitorsVo> visitorsVoList = new ArrayList<>();
+
+        for (Visitors visitor : visitors) {
+            for (UserInfo userInfo : userInfoList) {
+                if(visitor.getVisitorUserId().longValue() == userInfo.getUserId().longValue()){
+
+                    VisitorsVo visitorsVo = new VisitorsVo();
+                    visitorsVo.setAge(userInfo.getAge());
+                    visitorsVo.setAvatar(userInfo.getLogo());
+                    visitorsVo.setGender(userInfo.getSex().name().toLowerCase());
+                    visitorsVo.setId(userInfo.getUserId());
+                    visitorsVo.setNickname(userInfo.getNickName());
+                    visitorsVo.setTags(StringUtils.split(userInfo.getTags(), ','));
+                    visitorsVo.setFateValue(visitor.getScore().intValue());
+
+                    visitorsVoList.add(visitorsVo);
+                    break;
+                }
+            }
+        }
+
+        return visitorsVoList;
+    }
+
+    public PageResult queryAlbumList(Long userId, Integer page, Integer pageSize) {
+        PageResult pageResult = new PageResult();
+        pageResult.setPage(page);
+        pageResult.setPagesize(pageSize);
+
+        PageInfo<Publish> albumPageInfo = this.quanZiApi.queryAlbumList(userId, page, pageSize);
+        List<Publish> records = albumPageInfo.getRecords();
+
+        if(CollectionUtils.isEmpty(records)){
+            return pageResult;
+        }
+
+        List<Movements> movementsList = new ArrayList<>();
+        for (Publish record : records) {
+            Movements movements = new Movements();
+
+            movements.setId(record.getId().toHexString());
+            movements.setImageContent(record.getMedias().toArray(new String[]{}));
+            movements.setTextContent(record.getText());
+            movements.setUserId(record.getUserId());
+            movements.setCreateDate(RelativeDateFormat.format(new Date(record.getCreated())));
+
+            movementsList.add(movements);
+        }
+
+        List<Long> userIds = new ArrayList<>();
+        for (Movements movements : movementsList) {
+            if (!userIds.contains(movements.getUserId())) {
+                userIds.add(movements.getUserId());
+            }
+
+        }
+
+        QueryWrapper<UserInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.in("user_id", userIds);
+        List<UserInfo> userInfos = this.userInfoService.queryUserInfoList(queryWrapper);
+        for (Movements movements : movementsList) {
+            for (UserInfo userInfo : userInfos) {
+                if (movements.getUserId().longValue() == userInfo.getUserId().longValue()) {
+                    this.fillValueToMovements(movements, userInfo);
+                    break;
+                }
+            }
+        }
+
+        pageResult.setItems(movementsList);
+
+        return pageResult;
     }
 }

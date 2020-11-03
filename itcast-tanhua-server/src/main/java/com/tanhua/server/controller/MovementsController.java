@@ -4,12 +4,15 @@ import com.tanhua.server.service.MovementsService;
 import com.tanhua.server.service.QuanziMQService;
 import com.tanhua.server.vo.Movements;
 import com.tanhua.server.vo.PageResult;
+import com.tanhua.server.vo.VisitorsVo;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("movements")
@@ -183,6 +186,40 @@ public class MovementsController {
 
                 return ResponseEntity.ok(movements);
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    }
+
+    /**
+     * 谁看过我
+     *
+     * @return
+     */
+    @GetMapping("visitors")
+    public ResponseEntity<List<VisitorsVo>> queryVisitorsList(){
+        try {
+            List<VisitorsVo> list = this.movementsService.queryVisitorsList();
+            return ResponseEntity.ok(list);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    }
+
+    /**
+     * 自己的所有动态
+     *
+     * @return
+     */
+    @GetMapping("all")
+    public ResponseEntity<PageResult> queryAlbumList(@RequestParam(value = "page", defaultValue = "1") Integer page,
+                                                     @RequestParam(value = "pagesize", defaultValue = "10") Integer pageSize,
+                                                     @RequestParam(value = "userId") Long userId) {
+        try {
+            PageResult pageResult = this.movementsService.queryAlbumList(userId, page, pageSize);
+            return ResponseEntity.ok(pageResult);
         } catch (Exception e) {
             e.printStackTrace();
         }

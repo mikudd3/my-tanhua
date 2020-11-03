@@ -36,4 +36,15 @@ public class RecommendUserService {
     public PageInfo<RecommendUser> queryRecommendUserList(Long id, Integer page, Integer pagesize) {
         return this.recommendUserApi.queryPageInfo(id, page, pagesize);
     }
+
+    /**
+     * 查询推荐好友的缘分值
+     *
+     * @param userId
+     * @param toUserId
+     * @return
+     */
+    double queryScore(Long userId, Long toUserId) {
+        return this.recommendUserApi.queryScore(userId, toUserId);
+    }
 }
