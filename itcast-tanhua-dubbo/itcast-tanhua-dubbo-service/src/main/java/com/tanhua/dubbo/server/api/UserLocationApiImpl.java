@@ -2,13 +2,19 @@ package com.tanhua.dubbo.server.api;
 
 import com.alibaba.dubbo.config.annotation.Service;
 import com.tanhua.dubbo.server.pojo.UserLocation;
+import com.tanhua.dubbo.server.vo.UserLocationVo;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.geo.Circle;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Metrics;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+
+import java.util.List;
 
 @Service(version = "1.0.0")
 public class UserLocationApiImpl implements UserLocationApi {
@@ -47,6 +53,27 @@ public class UserLocationApiImpl implements UserLocationApi {
         }
 
         return ul.getId().toHexString();
+    }
+
+    @Override
+    public UserLocationVo queryByUserId(Long userId) {
+        Query query = Query.query(Criteria.where("userId").is(userId));
+        UserLocation userLocation = this.mongoTemplate.findOne(query, UserLocation.class);
+        return UserLocationVo.format(userLocation);
+    }
+
+    @Override
+    public List<UserLocationVo> queryUserFromLocation(Double longitude, Double latitude, Integer range) {
+        //中心点
+        GeoJsonPoint geoJsonPoint = new GeoJsonPoint(longitude, latitude);
+
+        //转换为2dsphere的距离
+        Distance distance = new Distance(range / 1000, Metrics.KILOMETERS);
+
+        //画一个圆
+        Circle circle = new Circle(geoJsonPoint, distance);
+        Query query = Query.query(Criteria.where("location").withinSphere(circle));
+        return UserLocationVo.formatToList(this.mongoTemplate.find(query, UserLocation.class));
     }
     
 }

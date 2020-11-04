@@ -107,6 +107,10 @@ public class QuanziMQService {
             User user = UserThreadLocal.get();
 
             Publish publish = this.quanZiApi.queryPublishById(publishId);
+            if(null == publish){
+                //进行视频点赞、评论等操作
+                return false;
+            }
 
             //构建消息
             Map<String, Object> msg = new HashMap<>();

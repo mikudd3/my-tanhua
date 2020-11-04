@@ -10,6 +10,7 @@
         <module>itcast-tanhua-dubbo</module>
         <module>itcast-tanhua-server</module>
         <module>itcast-tanhua-recommend</module>
+        <module>itcast-tanhua-elasticsearch</module>
     </modules>
 
     <parent>

@@ -5,10 +5,7 @@ import com.tanhua.server.vo.UserInfoVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("users")
@@ -38,5 +35,24 @@ public class UsersController {
         }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
+    /**
+     * 更新用户信息
+     *
+     * @param userInfoVo
+     * @return
+     */
+    @PutMapping
+    public ResponseEntity<Void> updateUserInfo(@RequestBody UserInfoVo userInfoVo){
+        try {
+            Boolean bool = this.usersService.updateUserInfo(userInfoVo);
+            if(bool){
+                return ResponseEntity.ok(null);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    }
+
 
 }

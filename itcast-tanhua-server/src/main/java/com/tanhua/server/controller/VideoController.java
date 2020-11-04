@@ -1,5 +1,6 @@
 package com.tanhua.server.controller;
 
+import com.tanhua.server.service.CommentsService;
 import com.tanhua.server.service.MovementsService;
 import com.tanhua.server.service.VideoMQService;
 import com.tanhua.server.service.VideoService;
@@ -28,6 +29,9 @@ public class VideoController {
 
     @Autowired
     private VideoMQService videoMQService;
+
+    @Autowired
+    private CommentsService commentsService;
 
     /**
      * 发布小视频
@@ -165,15 +169,19 @@ public class VideoController {
     @PostMapping("/{id}/comments")
     public ResponseEntity<Void> saveComments(@RequestBody Map<String, String> param,
                                              @PathVariable("id") String videoId) {
-        param.put("movementId", videoId);
-        ResponseEntity<Void> entity = this.commentsController.saveComments(param);
+        try {
+            String content = param.get("comment");
+            Boolean bool = this.commentsService.saveComments(videoId, content);
+            if (bool) {
+                //发送消息
+                this.videoMQService.commentVideoMsg(videoId);
 
-        if (entity.getStatusCode().is2xxSuccessful()) {
-            //发送消息
-            this.videoMQService.commentVideoMsg(videoId);
+                return ResponseEntity.ok(null);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        return entity;
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
 
     /**

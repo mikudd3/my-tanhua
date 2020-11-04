@@ -36,7 +36,7 @@ public class FaceEngineService {
 
     private FaceEngine faceEngine;
 
-//    @PostConstruct
+    @PostConstruct
     public void init() {
         // 激活并且初始化引擎
         FaceEngine faceEngine = new FaceEngine(libPath);

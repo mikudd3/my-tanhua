@@ -12,9 +12,9 @@ import java.util.List;
 @NoArgsConstructor
 public class PageResult {
 
-    private Integer counts;//总记录数
+    private Integer counts = 0;//总记录数
     private Integer pagesize;//页大小
-    private Integer pages;//总页数
+    private Integer pages = 0;//总页数
     private Integer page;//当前页码
     private List<?> items = Collections.emptyList(); //列表
 
